@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+      html, body { height: 100%; margin: 0; padding: 0; }
+      #map { height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script type="text/javascript">
+
+    data_from_django = {{test|safe}};
+
+    //data_from_django[0][1][0][1]
+    function articleWindow(x){
+      context=''
+      //data_from_django[4][1]
+      for (i = 0; i < x[1].length; i++) { 
+        context+='<div id="content">'+
+        ' <a href="'+x[1][i][1]+'" target="_blank">'+x[1][i][0]+'</a>'+
+        '</div>'
+      }
+      return context
+    }
+    var artlistString= data_from_django.map(articleWindow)
+
+    function latString2dict(x){
+      return {lat :parseFloat(x.split(",")[0]),lng:parseFloat(x.split(",")[1])}
+    }
+    var map;
+
+
+    ////ref from : http://stackoverflow.com/questions/16605758/how-to-create-multiple-infowindow-in-google-map-api
+
+    function bindInfoWindow(marker, map, infowindow, description) {
+      marker.addListener('click', function() {
+          infowindow.setContent(description);
+          infowindow.open(map, this);
+      });
+    }
+    ////ref from : http://stackoverflow.com/questions/16605758/how-to-create-multiple-infowindow-in-google-map-api
+
+    function initMap() {
+      var infowindow =  new google.maps.InfoWindow({
+        content: ""
+      });
+      
+    	var myLatLng = {lat: 24.7893351, lng: 120.9906655};
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: myLatLng,
+        zoom: 15
+      });
+      var image ='http://linux3.ogm.utah.gov/WebStuff/wwwroot/images/beachflag.png';
+      var marker = new google.maps.Marker({
+        position: myLatLng,
+        map: map,
+        title:"Here I am",
+        icon: image
+      });
+      //var i=4;
+      for (i = 0; i < data_from_django.length; i++) { 
+        var yLatLon = latString2dict(data_from_django[i][0][0])
+        var marker = new google.maps.Marker({
+          position: yLatLon,
+          map: map,
+          title: data_from_django[i][0][1]
+        });
+        bindInfoWindow(marker, map, infowindow, artlistString[i]);
+
+      }
+    }
+
+
+    </script>
+
+    <script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAlowHbmmfIsAAdGywwxiWi-jT6kjwAGQk&callback=initMap">
+    </script>
+  </body>
+</html>
