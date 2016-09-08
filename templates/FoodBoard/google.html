@@ -1,17 +1,68 @@
 <!DOCTYPE html>
+{% load staticfiles %}
 <html>
   <head>
     <style type="text/css">
       html, body { height: 100%; margin: 0; padding: 0; }
       #map { height: 100%; }
+
+      /* serach box*/
+      .controls {
+        margin-top: 10px;
+        border: 1px solid transparent;
+        border-radius: 2px 0 0 2px;
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        height: 32px;
+        outline: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+      #pac-input {
+        background-color: #fff;
+        font-family: Roboto;
+        font-size: 15px;
+        font-weight: 300;
+        margin-left: 12px;
+        padding: 0 11px 0 13px;
+        text-overflow: ellipsis;
+        width: 300px;
+      }
+      #pac-input:focus {
+        border-color: #4d90fe;
+      }
+
+      .wait {
+          display:    none;
+          position:   fixed;
+          z-index:    1000;
+          top:        0;
+          left:       0;
+          height:     100%;
+          width:      100%;
+          background: rgba( 255, 255, 255, .8 ) 
+                      url('http://i.stack.imgur.com/FhHRx.gif') 
+                      50% 50% 
+                      no-repeat;
+      }
+
+
     </style>
   </head>
   <body>
     <div id="map"></div>
+    <input id="pac-input" class="controls" type="text" placeholder="Search Box">
+    <div id="wait" class="wait"></div>
+    <script type="text/javascript" src="{% static 'jquery-3.1.0.min.js' %}"></script>
+    <script src="{% static 'jquery.cookie.js' %}"></script>
     <script type="text/javascript">
 
-    data_from_django = {{test|safe}};
 
+    var data_from_django = {{stores|safe}};
+
+
+    var markers=[];
+    var map;
+    var markerflag;
     //data_from_django[0][1][0][1]
     function articleWindow(x){
       context=''
@@ -23,12 +74,11 @@
       }
       return context
     }
-    var artlistString= data_from_django.map(articleWindow)
+    var artlistString= data_from_django.map(articleWindow);
 
     function latString2dict(x){
-      return {lat :parseFloat(x.split(",")[0]),lng:parseFloat(x.split(",")[1])}
+      return {lat :parseFloat(x.split(",")[0]),lng:parseFloat(x.split(",")[1])};
     }
-    var map;
 
 
     ////ref from : http://stackoverflow.com/questions/16605758/how-to-create-multiple-infowindow-in-google-map-api
@@ -45,37 +95,125 @@
       var infowindow =  new google.maps.InfoWindow({
         content: ""
       });
-      
+
     	var myLatLng = {lat: 24.7893351, lng: 120.9906655};
+
       map = new google.maps.Map(document.getElementById('map'), {
         center: myLatLng,
         zoom: 15
       });
+
       var image ='http://linux3.ogm.utah.gov/WebStuff/wwwroot/images/beachflag.png';
-      var marker = new google.maps.Marker({
+      markerflag = new google.maps.Marker({
         position: myLatLng,
         map: map,
         title:"Here I am",
         icon: image
       });
-      //var i=4;
-      for (i = 0; i < data_from_django.length; i++) { 
-        var yLatLon = latString2dict(data_from_django[i][0][0])
-        var marker = new google.maps.Marker({
-          position: yLatLon,
-          map: map,
-          title: data_from_django[i][0][1]
-        });
-        bindInfoWindow(marker, map, infowindow, artlistString[i]);
 
+      function drawstores(){
+        for (i = 0; i < data_from_django.length; i++) { 
+          var yLatLon = latString2dict(data_from_django[i][0][0])
+          var marker = new google.maps.Marker({
+            position: yLatLon,
+            map: map,
+            title: data_from_django[i][0][1]
+          });
+          markers.push(marker);
+          bindInfoWindow(marker, map, infowindow, artlistString[i]);
+        }
+      }
+
+      drawstores();
+
+
+      //here is serach box------------------
+      var input = document.getElementById('pac-input');
+      var searchBox = new google.maps.places.SearchBox(input);
+      map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+      searchBox.addListener('places_changed', function() {
+        var places = searchBox.getPlaces();
+        var latlagstring=places[0].geometry.location.lat()+","+places[0].geometry.location.lng();
+        setMapOnAll(null);
+        var markers=[];
+        var latlng = new google.maps.LatLng(places[0].geometry.location.lat(), places[0].geometry.location.lng());
+        markerflag.setPosition(latlng);
+        ajaxQuery(latlagstring);
+        map.setCenter(markerflag.getPosition());
+      })
+      //here is serach box------------------
+
+
+      // jax -------------------------------------
+      //put inside init is to make sure that google js is already loaded
+      var csrftoken = $.cookie('csrftoken');
+
+      function csrfSafeMethod(method) {
+          // these HTTP methods do not require CSRF protection
+          return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+      }
+
+      $.ajaxSetup({
+          beforeSend: function(xhr, settings) {
+              if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                  xhr.setRequestHeader("X-CSRFToken", csrftoken);
+              }
+          }
+      });
+
+      //just for fun , used to debug
+      function ajaxtrial(){
+          console.log("kerker");
+          $.ajax({
+              url: "donate/",
+              type: "post",
+              data: {comeon:"123"},
+              success: function(response) {
+                  console.log(response);
+              }
+          })
+      }
+
+      //get queries result from django
+      function ajaxQuery(latlag){
+          console.log("Query for latlng");
+          $.ajax({
+              url: "queryLatlng/",
+              type: "post",
+              data: {latlngs:latlag},
+              success: function(response) {
+                  //console.log(response);
+                  data_from_django= response;
+                  artlistString= data_from_django.map(articleWindow);
+                  drawstores();
+              }
+          })
+      }
+
+      $(document).on({
+          ajaxStart: function() { console.log("starting");  
+                      $('.wait').show();},
+           ajaxStop: function() { console.log("stop"); 
+                    $('.wait').hide();}    
+      });
+
+      // jax ------------------------------------
+
+    }
+
+    function setMapOnAll(map) {
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(map);
       }
     }
 
 
+
+
+
     </script>
 
-    <script async defer
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAlowHbmmfIsAAdGywwxiWi-jT6kjwAGQk&callback=initMap">
-    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAlowHbmmfIsAAdGywwxiWi-jT6kjwAGQk&libraries=places&callback=initMap"></script>
   </body>
 </html>
