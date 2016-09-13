@@ -113,7 +113,9 @@
 
       function drawstores(){
         for (i = 0; i < data_from_django.length; i++) { 
-          var yLatLon = latString2dict(data_from_django[i][0][0])
+          var yLatLon = latString2dict(data_from_django[i][0])
+          //older version;
+          //var yLatLon = latString2dict(data_from_django[i][0][0])
           var marker = new google.maps.Marker({
             position: yLatLon,
             map: map,
@@ -214,6 +216,6 @@
     </script>
 
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAlowHbmmfIsAAdGywwxiWi-jT6kjwAGQk&libraries=places&callback=initMap"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70hIAYBq2iLgsBRPxQ-EznoREMYMsM-k&libraries=places&callback=initMap"></script>
   </body>
 </html>
