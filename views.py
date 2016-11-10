@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.http import Http404
 from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 import json
 import psycopg2
@@ -52,7 +53,7 @@ def donate(request):
         print(request.POST['comeon']);
         return HttpResponse(json.dumps({"689":123,"426":92}), content_type='application/json')
 
-
+@ensure_csrf_cookie
 def queryLatlng(request):
     qpstr=request.POST['latlngs'].split(",");
     print qpstr
