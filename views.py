@@ -7,7 +7,7 @@ import json
 import psycopg2
 import timeit
 
-
+@ensure_csrf_cookie
 def googlemap(request):
     conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
     cur = conn.cursor()
@@ -53,8 +53,8 @@ def donate(request):
         print(request.POST['comeon']);
         return HttpResponse(json.dumps({"689":123,"426":92}), content_type='application/json')
 
-@ensure_csrf_cookie
 def queryLatlng(request):
+    print request
     qpstr=request.POST['latlngs'].split(",");
     print qpstr
     conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")

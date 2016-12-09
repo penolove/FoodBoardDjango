@@ -44,8 +44,6 @@
                       50% 50% 
                       no-repeat;
       }
-
-
     </style>
   </head>
   <body>
@@ -111,17 +109,35 @@
         icon: image
       });
 
+      // color icon of marker ref :http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker===========
+      var redColor = "FE7569";
+      var redImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + redColor,
+          new google.maps.Size(21, 34),
+          new google.maps.Point(0,0),
+          new google.maps.Point(10, 34));
+      var blueColor = "5682A0";
+      var blueImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + blueColor,
+          new google.maps.Size(21, 34),
+          new google.maps.Point(0,0),
+          new google.maps.Point(10, 34));
+
+      var iconList=[redImage,blueImage];
+      // color icon of marker ref :http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker===========
       function drawstores(){
         for (i = 0; i < data_from_django.length; i++) { 
           var yLatLon = latString2dict(data_from_django[i][0])
           //older version;
           //var yLatLon = latString2dict(data_from_django[i][0][0])
+          //the length of stores amount
+          var idx=data_from_django[i][1].length>5?0:1;
           var marker = new google.maps.Marker({
             position: yLatLon,
             map: map,
+            icon: iconList[idx],
             title: data_from_django[i][0][1]
           });
           markers.push(marker);
+
           bindInfoWindow(marker, map, infowindow, artlistString[i]);
         }
       }
@@ -170,7 +186,7 @@
       }
       //var csrftoken = $.cookie('csrftoken');
       var csrftoken =  getCookie('csrftoken');
-
+      console.log(csrftoken);
       function csrfSafeMethod(method) {
           // these HTTP methods do not require CSRF protection
           return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
