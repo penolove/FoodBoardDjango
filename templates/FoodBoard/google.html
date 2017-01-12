@@ -106,7 +106,8 @@
         position: myLatLng,
         map: map,
         title:"Here I am",
-        icon: image
+        icon: image,
+        draggable:true
       });
 
       // color icon of marker ref :http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker===========
@@ -152,14 +153,32 @@
       searchBox.addListener('places_changed', function() {
         var places = searchBox.getPlaces();
         var latlagstring=places[0].geometry.location.lat()+","+places[0].geometry.location.lng();
+        //clean all the marker
         setMapOnAll(null);
         var markers=[];
+        //clean all the marker
         var latlng = new google.maps.LatLng(places[0].geometry.location.lat(), places[0].geometry.location.lng());
         markerflag.setPosition(latlng);
         ajaxQuery(latlagstring);
         map.setCenter(markerflag.getPosition());
       })
       //here is serach box------------------
+
+
+      //Durgable  marker Flag -------------
+      //Durg the marker seems good, easy to implement, which can reduce the radius
+      google.maps.event.addListener(markerflag, 'dragend', function () {
+        //clean all the marker
+        setMapOnAll(null);
+        var markers=[];
+        //clean all the marker
+        map.setCenter(this.getPosition()); // Set map center to marker position
+        var latlagstring=this.getPosition().lat()+","+this.getPosition().lng();
+        ajaxQuery(latlagstring);
+      });
+
+      //Durg the marker seems good, which can reduce the radius
+      //Durgable  marker Flag -------------
 
 
       // jax -------------------------------------

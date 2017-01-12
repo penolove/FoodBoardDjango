@@ -13,7 +13,7 @@ def googlemap(request):
     cur = conn.cursor()
     start = timeit.default_timer()
     cur.execute("""select latlon,storename from storetable \
-    where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point(120.9906655,24.7893351))<1.5""")
+    where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point(120.9906655,24.7893351))<1.3""")
     rows = cur.fetchall()
     stop = timeit.default_timer()
     print "calclute distance take :"+str(stop - start) +"s"
@@ -61,7 +61,7 @@ def queryLatlng(request):
     cur = conn.cursor()
     start = timeit.default_timer()
     cur.execute("""select latlon,storename from storetable \
-    where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point("""+qpstr[1]+","+qpstr[0]+"""))<1.5""")
+    where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point("""+qpstr[1]+","+qpstr[0]+"""))<1.3""")
     rows = cur.fetchall()
     stop = timeit.default_timer()
     print "calclute distance take :"+str(stop - start) +"s"
