@@ -23,7 +23,7 @@ def googlemap(request):
             datetime.strptime(timetick,'%Y.%m.%d.%H.%M'))
 
     if ch_tick.total_seconds()>48000:
-        print "time to clean Store_dict cache"
+        print "FoodBoard googlemap time to clean Store_dict cache"
         timetick = time.strftime("%Y.%m.%d.%H.%M")
         stores_dict.clear()
 
