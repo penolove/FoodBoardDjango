@@ -60,13 +60,15 @@ def googlemap(request):
                 rx[i[2]].append(i)
         r=rx.items()
         stop = timeit.default_timer()
+        print "Food Board queryLatlng : response from DB"
         print "Find child takes :"+str(stop - start) +"s"
         stores_json=json.dumps(r)
         #record this latlng
         stores_dict[latlon]=stores_json
         conn.close()
     else:
-        "get json_from_cache"
+        #get json_from_cache
+        print "Food Board queryLatlng : response from cache"
         stores_json=stores_dict[latlon]
 
     return render(request, 'FoodBoard/google.html', {'stores':stores_json})
