@@ -174,7 +174,7 @@
         //clean all the marker
         map.setCenter(this.getPosition()); // Set map center to marker position
         var latlagstring=this.getPosition().lat()+","+this.getPosition().lng();
-        ajaxQuery(latlagstring);
+        ajaxQuery(latlagstring,"Drag");
       });
 
       //Durg the marker seems good, which can reduce the radius
@@ -233,12 +233,16 @@
       }
 
       //get queries result from django
-      function ajaxQuery(latlag){
+      function ajaxQuery(latlag, Drag_Serach = "Serach"){
+          //it seems default parameter was workd only on ES6/ES2015(?)
+          //Drag_Serach = typeof Drag_Serach !== 'undefined' ? a : "Serach";
+          //it seems default parameter was workd only on ES6/ES2015(?)
+
           console.log("Query for latlng");
           $.ajax({
               url: "queryLatlng/",
               type: "post",
-              data: {latlngs:latlag},
+              data: {latlngs:latlag, Drag_Serach:Drag_Serach},
               success: function(response) {
                   //console.log(response);
                   data_from_django= response;
