@@ -113,12 +113,14 @@
 
       // color icon of marker ref :http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker===========
       var redColor = "FE7569";
-      var redImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + redColor,
+     // var redImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + redColor,
+      var redImage = new google.maps.MarkerImage("{% static 'redflag.png' %}",
           new google.maps.Size(21, 34),
           new google.maps.Point(0,0),
           new google.maps.Point(10, 34));
       var blueColor = "5682A0";
-      var blueImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + blueColor,
+     // var blueImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + blueColor,
+      var blueImage = new google.maps.MarkerImage("{% static 'blueflag.png' %}",
           new google.maps.Size(21, 34),
           new google.maps.Point(0,0),
           new google.maps.Point(10, 34));
