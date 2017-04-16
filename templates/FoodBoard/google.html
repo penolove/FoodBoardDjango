@@ -101,7 +101,8 @@
         zoom: 15
       });
 
-      var image ='http://linux3.ogm.utah.gov/WebStuff/wwwroot/images/beachflag.png';
+     // var image ='http://linux3.ogm.utah.gov/WebStuff/wwwroot/images/beachflag.png';
+      var image="{% static 'beachflag.png' %}";
       markerflag = new google.maps.Marker({
         position: myLatLng,
         map: map,
@@ -276,6 +277,6 @@
     </script>
 
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70hIAYBq2iLgsBRPxQ-EznoREMYMsM-k&libraries=places&callback=initMap"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70hIAYBq2iLgsBRPxQ-EznoREMYMsM-k&libraries=places&callback=initMap&language=zh-TW"></script>
   </body>
 </html>
