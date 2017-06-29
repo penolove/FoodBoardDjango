@@ -46,225 +46,275 @@
       }
     </style>
   </head>
+
   <body>
     <div id="map"></div>
     <input id="pac-input" class="controls" type="text" placeholder="Search Box">
     <div id="wait" class="wait"></div>
     <script type="text/javascript" src="{% static 'jquery-3.1.0.min.js' %}"></script>
     <script src="{% static 'jquery.cookie.js' %}"></script>
+    
+    <script type="text/javascript">
+        //added in 20170629 --- jaxscoreQuery
+        function ajaxScoreQuery(form) {
+        //given form and post it to DBserver
+            var data = JSON.stringify( $(form).serialize() );
+            console.log( data );
+                
+            $.ajax({
+                type: "post",
+                url: "donate/",
+                data: data,
+                success: function (data) {
+                    console.log('Submission was successful.');
+                    console.log(data);
+                },
+                error: function (data) {
+                    console.log('An error occurred.');
+                    console.log(data);
+                },
+            });
+            return false; //don't submit
+        }
+
+        //just for fun , used to debug
+        function ajaxtrial(){
+            console.log("kerker");
+            $.ajax({
+                url: "donate/",
+                type: "post",
+                data: {comeon:"123"},
+                success: function(response) {
+                    console.log(response);
+                }
+            })
+        }
+        //added in 20170629 --- jaxscoreQuery
+    </script>
+
     <script type="text/javascript">
 
-
     var data_from_django = {{stores|safe}};
-
-
+    //  <form class="contactForm1" action="/your_url" method="post">
     var markers=[];
     var map;
     var markerflag;
+    var if_score_boxes = true;
     //data_from_django[0][1][0][1]
+
+
     function articleWindow(x){
-      context=''
-      //data_from_django[4][1]
-      for (i = 0; i < x[1].length; i++) { 
-        context+='<div id="content">'+
-        ' <a href="'+x[1][i][1]+'" target="_blank">'+x[1][i][0]+'</a>'+
-        '</div>'
-      }
-      return context
+        context=''
+        //data_from_django[4][1]
+        for (i = 0; i < x[1].length; i++) { 
+            context+='<div id="content">'+
+            ' <a href="'+x[1][i][1]+'" target="_blank">'+x[1][i][0]+'</a>'
+            if(if_score_boxes){
+                 context+='<form onsubmit="return ajaxScoreQuery(this)" >'+
+                                '<input type="radio" name="score" value="Nice"> Nice '+
+                                '<input type="radio" name="score" value="Normal"> Normal '+
+                                '<input type="radio" name="score" value="Worst"> Worst <br>'+
+                                '<input type="checkbox" name="country" value="chinese"> ch'+
+                                '<input type="checkbox" name="country" value="japan"> jp '+
+                                '<input type="checkbox" name="country" value="korea"> ko'+
+                                '<input type="checkbox" name="country" value="Tailand"> Tai '+
+                                '<input type="checkbox" name="country" value="West"> West <br>'+
+                                '<input type="hidden" name="url" value='+x[1][i][1]+'>'+
+                                '<input type="submit" value="Submit"> <br>'+
+                            '</form>'+
+                            '</div><br>'
+            }
+        }
+        return context
     }
+
+    //create artlistString that may used to display
     var artlistString= data_from_django.map(articleWindow);
 
     function latString2dict(x){
-      return {lat :parseFloat(x.split(",")[0]),lng:parseFloat(x.split(",")[1])};
+        return {lat :parseFloat(x.split(",")[0]),lng:parseFloat(x.split(",")[1])};
     }
 
 
     ////ref from : http://stackoverflow.com/questions/16605758/how-to-create-multiple-infowindow-in-google-map-api
 
     function bindInfoWindow(marker, map, infowindow, description) {
-      marker.addListener('click', function() {
-          infowindow.setContent(description);
-          infowindow.open(map, this);
-      });
+        marker.addListener('click', function() {
+            infowindow.setContent(description);
+            infowindow.open(map, this);
+        });
     }
     ////ref from : http://stackoverflow.com/questions/16605758/how-to-create-multiple-infowindow-in-google-map-api
 
-    function initMap() {
-      var infowindow =  new google.maps.InfoWindow({
-        content: ""
-      });
 
+    //here is initMap a huge function
+    function initMap() {
+        var infowindow =  new google.maps.InfoWindow({
+            content: ""
+        });
     	var myLatLng = {lat: 24.7893351, lng: 120.9906655};
 
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: myLatLng,
-        zoom: 15
-      });
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: myLatLng,
+            zoom: 15
+        });
 
-     // var image ='http://linux3.ogm.utah.gov/WebStuff/wwwroot/images/beachflag.png';
-      var image="{% static 'beachflag.png' %}";
-      markerflag = new google.maps.Marker({
-        position: myLatLng,
-        map: map,
-        title:"Here I am",
-        icon: image,
-        draggable:true
-      });
-
-      // color icon of marker ref :http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker===========
-      var redColor = "FE7569";
-     // var redImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + redColor,
-      var redImage = new google.maps.MarkerImage("{% static 'redflag.png' %}",
-          new google.maps.Size(21, 34),
-          new google.maps.Point(0,0),
-          new google.maps.Point(10, 34));
-      var blueColor = "5682A0";
-     // var blueImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + blueColor,
-      var blueImage = new google.maps.MarkerImage("{% static 'blueflag.png' %}",
-          new google.maps.Size(21, 34),
-          new google.maps.Point(0,0),
-          new google.maps.Point(10, 34));
-
-      var iconList=[redImage,blueImage];
-      // color icon of marker ref :http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker===========
-      function drawstores(){
-        for (i = 0; i < data_from_django.length; i++) { 
-          var yLatLon = latString2dict(data_from_django[i][0])
-          //older version;
-          //var yLatLon = latString2dict(data_from_django[i][0][0])
-          //the length of stores amount
-          var idx=data_from_django[i][1].length>5?0:1;
-          var marker = new google.maps.Marker({
-            position: yLatLon,
+        // var image ='http://linux3.ogm.utah.gov/WebStuff/wwwroot/images/beachflag.png';
+        var image="{% static 'beachflag.png' %}";
+        markerflag = new google.maps.Marker({
+            position: myLatLng,
             map: map,
-            icon: iconList[idx],
-            title: data_from_django[i][0][1]
-          });
-          markers.push(marker);
+            title:"Here I am",
+            icon: image,
+            draggable:true
+        });
 
-          bindInfoWindow(marker, map, infowindow, artlistString[i]);
+        // color icon of marker ref :http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker===========
+        var redColor = "FE7569";
+        // var redImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + redColor,
+        var redImage = new google.maps.MarkerImage("{% static 'redflag.png' %}",
+            new google.maps.Size(21, 34),
+            new google.maps.Point(0,0),
+            new google.maps.Point(10, 34));
+        var blueColor = "5682A0";
+
+        // var blueImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + blueColor,
+        var blueImage = new google.maps.MarkerImage("{% static 'blueflag.png' %}",
+            new google.maps.Size(21, 34),
+            new google.maps.Point(0,0),
+            new google.maps.Point(10, 34));
+
+        var iconList=[redImage,blueImage];
+
+
+        // color icon of marker ref :http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker===========
+        function drawstores(){
+            for (i = 0; i < data_from_django.length; i++) { 
+              var yLatLon = latString2dict(data_from_django[i][0])
+              //older version;
+              //var yLatLon = latString2dict(data_from_django[i][0][0])
+              //the length of stores amount
+              var idx=data_from_django[i][1].length>5?0:1;
+              var marker = new google.maps.Marker({
+                 position: yLatLon,
+                 map: map,
+                 icon: iconList[idx],
+                 title: data_from_django[i][0][1]
+              });
+
+              markers.push(marker);
+              //here bind window info to marker
+              bindInfoWindow(marker, map, infowindow, artlistString[i]);
+            }
         }
-      }
 
-      drawstores();
-
-
-      //here is serach box------------------
-      var input = document.getElementById('pac-input');
-      var searchBox = new google.maps.places.SearchBox(input);
-      map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
-      searchBox.addListener('places_changed', function() {
-        var places = searchBox.getPlaces();
-        var latlagstring=places[0].geometry.location.lat()+","+places[0].geometry.location.lng();
-        //clean all the marker
-        setMapOnAll(null);
-        var markers=[];
-        //clean all the marker
-        var latlng = new google.maps.LatLng(places[0].geometry.location.lat(), places[0].geometry.location.lng());
-        markerflag.setPosition(latlng);
-        ajaxQuery(latlagstring);
-        map.setCenter(markerflag.getPosition());
-      })
-      //here is serach box------------------
+        drawstores();
 
 
-      //Durgable  marker Flag -------------
-      //Durg the marker seems good, easy to implement, which can reduce the radius
-      google.maps.event.addListener(markerflag, 'dragend', function () {
-        //clean all the marker
-        setMapOnAll(null);
-        var markers=[];
-        //clean all the marker
-        map.setCenter(this.getPosition()); // Set map center to marker position
-        var latlagstring=this.getPosition().lat()+","+this.getPosition().lng();
-        ajaxQuery(latlagstring,"Drag");
-      });
+        //here is serach box------------------
+        var input = document.getElementById('pac-input');
+        var searchBox = new google.maps.places.SearchBox(input);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+        searchBox.addListener('places_changed', function() {
+            var places = searchBox.getPlaces();
+            var latlagstring=places[0].geometry.location.lat()+","+places[0].geometry.location.lng();
+            //clean all the marker
+            setMapOnAll(null);
+            var markers=[];
+            //clean all the marker
+            var latlng = new google.maps.LatLng(places[0].geometry.location.lat(), places[0].geometry.location.lng());
+            markerflag.setPosition(latlng);
+            ajaxQuery(latlagstring);
+            map.setCenter(markerflag.getPosition());
+        })
+        //here is serach box------------------
 
-      //Durg the marker seems good, which can reduce the radius
-      //Durgable  marker Flag -------------
+
+        //Durgable  marker Flag -------------
+        //Durg the marker seems good, easy to implement, which can reduce the radius
+
+        google.maps.event.addListener(markerflag, 'dragend', function () {
+            //clean all the marker
+            setMapOnAll(null);
+            var markers=[];
+            //clean all the marker
+            map.setCenter(this.getPosition()); // Set map center to marker position
+            var latlagstring=this.getPosition().lat()+","+this.getPosition().lng();
+            //get position and redraw all markers
+            ajaxQuery(latlagstring,"Drag");
+        });
+
+        //Durg the marker seems good, which can reduce the radius
+        //Durgable  marker Flag -------------
 
 
-      // jax -------------------------------------
-      //put inside init is to make sure that google js is already loaded
-
+        //---- jax -------------------------------------
+        //---- put inside init is to make sure that google js is already loaded ---
       
-      //ref:http://stackoverflow.com/questions/19598993/csrf-cookie-not-set-django-verification-failed
-      //use getcookie instead of js
-      
-      function getCookie(name) {
-          var cookieValue = null;
-          if (document.cookie && document.cookie != '') {
-              var cookies = document.cookie.split(';');
-              for (var i = 0; i < cookies.length; i++) {
-                  var cookie = jQuery.trim(cookies[i]);
-                  // Does this cookie string begin with the name we want?
-                  if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                      break;
+        //ref:http://stackoverflow.com/questions/19598993/csrf-cookie-not-set-django-verification-failed
+        //use getcookie instead of js
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+              return cookieValue;
+        }
+
+        //var csrftoken = $.cookie('csrftoken');
+        var csrftoken =  getCookie('csrftoken');
+        console.log(csrftoken);
+        function csrfSafeMethod(method) {
+              // these HTTP methods do not require CSRF protection
+              return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+        $.ajaxSetup({
+              beforeSend: function(xhr, settings) {
+                  if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                      xhr.setRequestHeader("X-CSRFToken", csrftoken);
                   }
               }
-          }
-          return cookieValue;
-      }
-      //var csrftoken = $.cookie('csrftoken');
-      var csrftoken =  getCookie('csrftoken');
-      console.log(csrftoken);
-      function csrfSafeMethod(method) {
-          // these HTTP methods do not require CSRF protection
-          return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-      }
+        });
 
-      $.ajaxSetup({
-          beforeSend: function(xhr, settings) {
-              if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                  xhr.setRequestHeader("X-CSRFToken", csrftoken);
-              }
-          }
-      });
 
-      //just for fun , used to debug
-      function ajaxtrial(){
-          console.log("kerker");
-          $.ajax({
-              url: "donate/",
-              type: "post",
-              data: {comeon:"123"},
-              success: function(response) {
-                  console.log(response);
-              }
-          })
-      }
+         //get queries result from django
+         function ajaxQuery(latlag, Drag_Serach = "Serach"){
+            //it seems default parameter was workd only on ES6/ES2015(?)
+            //Drag_Serach = typeof Drag_Serach !== 'undefined' ? a : "Serach";
+            //it seems default parameter was workd only on ES6/ES2015(?)
+            console.log("Query for latlng");
+            $.ajax({
+                url: "queryLatlng/",
+                type: "post",
+                data: {latlngs:latlag, Drag_Serach:Drag_Serach},
+                success: function(response) {
+                    //console.log(response);
+                    data_from_django= response;
+                    artlistString= data_from_django.map(articleWindow);
+                    drawstores();
+                }
+            })
+        }
 
-      //get queries result from django
-      function ajaxQuery(latlag, Drag_Serach = "Serach"){
-          //it seems default parameter was workd only on ES6/ES2015(?)
-          //Drag_Serach = typeof Drag_Serach !== 'undefined' ? a : "Serach";
-          //it seems default parameter was workd only on ES6/ES2015(?)
+        $(document).on({
+              ajaxStart: function() { console.log("starting");  
+                          $('.wait').show();},
+               ajaxStop: function() { console.log("stop"); 
+                        $('.wait').hide();}    
+        });
 
-          console.log("Query for latlng");
-          $.ajax({
-              url: "queryLatlng/",
-              type: "post",
-              data: {latlngs:latlag, Drag_Serach:Drag_Serach},
-              success: function(response) {
-                  //console.log(response);
-                  data_from_django= response;
-                  artlistString= data_from_django.map(articleWindow);
-                  drawstores();
-              }
-          })
-      }
+      // ---- jax ------------------------------------
 
-      $(document).on({
-          ajaxStart: function() { console.log("starting");  
-                      $('.wait').show();},
-           ajaxStop: function() { console.log("stop"); 
-                    $('.wait').hide();}    
-      });
-
-      // jax ------------------------------------
-
-    }
+    } // end of init
 
     function setMapOnAll(map) {
       for (var i = 0; i < markers.length; i++) {
