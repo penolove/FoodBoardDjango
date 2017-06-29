@@ -76,7 +76,8 @@ def googlemap(request):
 
 def donate(request):
     if request.method == 'POST':
-        print(request.POST['comeon']);
+        print(request.POST);
+        time.sleep(1);
         return HttpResponse(json.dumps({"689":123,"426":92}), content_type='application/json')
 
 def queryLatlng(request):
