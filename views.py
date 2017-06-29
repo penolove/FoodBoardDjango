@@ -80,6 +80,65 @@ def donate(request):
         time.sleep(1);
         return HttpResponse(json.dumps({"689":123,"426":92}), content_type='application/json')
 
+
+def queryScore(request):
+    if request.method == 'POST':
+	updated=False
+	scores=[u'Worst', u'Normal', u'Nice']
+	classes=[u'chinese', u'japan', u'korea', u'Tailand', u'West', u'Others']
+	updateList=["",0,False,False,False,False,False,False]
+        #print(request.POST);
+	request_dict_tmp = dict(request.POST)
+	request_dict = dict()
+	for key_,value_ in request_dict_tmp.items():
+		key=key_.replace('"','')
+		#print type(value_)
+		if type(value_) is list:
+			value = [i.replace('"','') for i in value_]
+		else:
+			value=value_.replace('"','')
+		#prevent key not exist
+		request_dict[key] = request_dict.get(key, list())
+		
+		if type(value) is list:
+			[request_dict[key].append(i) for i in value]
+		else:
+			request_dict[key].append(value)
+		
+	# print (request_dict)
+	# check if bbox is verified
+	if 'country' in request_dict:
+		class_tuple=request_dict['country'];
+		for i in class_tuple:
+			updateList[classes.index(i)+2]=True
+		updated=True
+
+	if 'score' in request_dict:
+		updateList[1]=scores.index(request_dict['score'][0])-1
+		updated=True
+
+        updateList[0]=request_dict['url'][0];
+	print ("current tuples: ",updateList)
+	# if data updated, connect psycopg2
+	query_result="not valid data"
+	try:
+		if updated:
+			print ("connecting DB")
+			query="""INSERT INTO ArticleScoreTable(url,score,ch,jp,ko,tai,west,other) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) """
+			conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
+			cur = conn.cursor()
+			cur.execute(query,updateList)
+			conn.commit()	
+			conn.close()
+			print ("DB querydone")
+			query_result="successfully sent"
+	except:
+		query_result="DB update fail"
+		print("DB update fail")
+		
+        return HttpResponse(json.dumps({"result":query_result}), content_type='application/json')
+
+
 def queryLatlng(request):
     print request.POST.keys()
     source_query=request.POST['Drag_Serach']
