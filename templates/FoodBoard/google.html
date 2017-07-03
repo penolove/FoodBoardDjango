@@ -63,10 +63,10 @@
                 
             $.ajax({
                 type: "post",
-                url: "donate/",
+                url: "queryScore/",
                 data: data,
                 success: function (data) {
-                    console.log('Submission was successful.');
+                    console.log('Communication was successful.');
                     console.log(data);
                 },
                 error: function (data) {
@@ -118,7 +118,8 @@
                                 '<input type="checkbox" name="country" value="japan"> jp '+
                                 '<input type="checkbox" name="country" value="korea"> ko'+
                                 '<input type="checkbox" name="country" value="Tailand"> Tai '+
-                                '<input type="checkbox" name="country" value="West"> West <br>'+
+                                '<input type="checkbox" name="country" value="West"> West '+
+                                '<input type="checkbox" name="country" value="Others"> Others <br>'+
                                 '<input type="hidden" name="url" value='+x[1][i][1]+'>'+
                                 '<input type="submit" value="Submit"> <br>'+
                             '</form>'+
