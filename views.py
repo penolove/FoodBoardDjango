@@ -28,13 +28,17 @@ def googlemap(request):
         stores_dict.clear()
 
     #NTHU
-    latlon="120.99.06655,24.7893351"
+    #latlon="120.99.06655,24.7893351"
+    #TMU
+    latlon = "121.56161799999995,25.025354"
+    radius = "1.0"
+    lon_,lat_ = latlon.split(",")
     if (stores_dict.get(latlon,None)==None):
         conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
         cur = conn.cursor()
         start = timeit.default_timer()
         cur.execute("""select latlon,storename from storetable \
-        where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point(120.9906655,24.7893351))<1.3""")
+        where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point("""+latlon+"""))<"""+radius)
         rows = cur.fetchall()
         stop = timeit.default_timer()
         print "calclute distance take :"+str(stop - start) +"s"
@@ -71,7 +75,7 @@ def googlemap(request):
         print "Food Board queryLatlng : response from cache"
         stores_json=stores_dict[latlon]
 
-    return render(request, 'FoodBoard/google.html', {'stores':stores_json})
+    return render(request, 'FoodBoard/google.html', {'stores':stores_json,'lat':lat_,'lon':lon_})
 
 
 def donate(request):
