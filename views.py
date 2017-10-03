@@ -12,10 +12,65 @@ import random
 
 stores_dict={}
 timetick = time.strftime("%Y.%m.%d.%H.%M")
+radius = "0.8"
+query_cmd = """select latlon,storename from storetable \
+        where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point(%s))<%s"""
+Maximum_articles = 2000
+
+
+
+def query_core(latlon,radius=radius):
+    """ reuse this function for latlon post or get request"""
+    conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
+    cur = conn.cursor()
+    start = timeit.default_timer()
+    cur.execute(query_cmd%(latlon,radius))
+    rows = cur.fetchall()
+    stop = timeit.default_timer()
+    print "calclute distance take :"+str(stop - start) +"s"
+    a=rows
+    r=[]
+    start = timeit.default_timer()
+    tempstr=""
+    count=1
+    for i in a:
+        if(count!=len(a)):
+            tempstr+="'"+i[0]+"',"
+        else:
+            tempstr+="'"+i[0]+"'"
+        count+=1
+    cur.execute("select title,url,latlon from articletable where latlon in ("+tempstr+")")
+
+    rows = cur.fetchall()
+
+    print("[queryLatlng] acticles amount :  %d"%len(rows))
+    if len(rows)>Maximum_articles:
+        print("[queryLatlng] size too large, downsampling")
+        rows = [ rows[i] for i in sorted(random.sample(xrange(len(rows)), Maximum_articles)) ]
+        print("[queryLatlng] size after sampled :  %d"%len(rows))
+
+    stop = timeit.default_timer()
+    rx=dict()
+    for i in rows:
+        if(rx.get(i[2],0)==0):
+            rx[i[2]]=[i]
+        else:
+            rx[i[2]].append(i)
+
+    r=rx.items()
+    stop = timeit.default_timer()
+    print "Food Board queryLatlng : response from DB"
+    print "Find child takes :"+str(stop - start) +"s"
+    stores_json=json.dumps(r)
+    conn.close()
+    return stores_json
+
 
 @ensure_csrf_cookie
 def googlemap(request):
-    """render FoodBoard Index"""
+    """render FoodBoard Index, it handles get request,
+       which gives a fix latlon
+    """
     global stores_dict
 
     #clean DB per 8 hr
@@ -32,45 +87,11 @@ def googlemap(request):
     #latlon="120.99.06655,24.7893351"
     #TMU
     latlon = "121.56161799999995,25.025354"
-    radius = "0.5"
     lon_,lat_ = latlon.split(",")
     if (stores_dict.get(latlon,None)==None):
-        conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
-        cur = conn.cursor()
-        start = timeit.default_timer()
-        cur.execute("""select latlon,storename from storetable \
-        where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point("""+latlon+"""))<"""+radius)
-        rows = cur.fetchall()
-        stop = timeit.default_timer()
-        print "calclute distance take :"+str(stop - start) +"s"
-        a=rows
-        r=[]
-        start = timeit.default_timer()
-        tempstr=""
-        count=1
-        for i in a:
-            if(count!=len(a)):
-                tempstr+="'"+i[0]+"',"
-            else:
-                tempstr+="'"+i[0]+"'"
-            count+=1
-        cur.execute("select title,url,latlon from articletable where latlon in ("+tempstr+")")
-        rows = cur.fetchall()
-        stop = timeit.default_timer()
-        rx=dict()
-        for i in rows:
-            if(rx.get(i[2],0)==0):
-                rx[i[2]]=[i]
-            else:
-                rx[i[2]].append(i)
-        r=rx.items()
-        stop = timeit.default_timer()
-        print "Food Board queryLatlng : response from DB"
-        print "Find child takes :"+str(stop - start) +"s"
-        stores_json=json.dumps(r)
+        stores_json = query_core(latlon)
         #record this latlng
-        stores_dict[latlon]=stores_json
-        conn.close()
+        stores_dict[latlon] = stores_json
     else:
         #get json_from_cache
         print "Food Board queryLatlng : response from cache"
@@ -78,6 +99,36 @@ def googlemap(request):
 
     return render(request, 'FoodBoard/google.html', {'stores':stores_json,'lat':lat_,'lon':lon_})
 
+def queryLatlng(request):
+    """this function handle latlon post query,
+       if it comes from search, cache it
+       if it comes from drap, go away.
+    """
+    print request.POST.keys()
+    source_query=request.POST['Drag_Serach']
+    print source_query
+    latlon = request.POST['latlngs'];
+    if (stores_dict.get(latlon,None)==None):
+        qpstr = latlon.split(",");
+        print qpstr
+        conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
+        cur = conn.cursor()
+        start = timeit.default_timer()
+        latlon = qpstr[1]+","+qpstr[0] #  prepare latlon
+        stores_json = query_core(latlon)
+        #record this latlng only for serach
+        if(source_query=="Serach"):
+            print "record to stores_dict"
+            stores_dict[latlon]=stores_json
+        stop = timeit.default_timer()
+        print "Food Board queryLatlng : response from DB"
+        print "Find child takes :"+str(stop - start) +"s"
+        conn.close()
+    else:
+        print "Food Board queryLatlng : response from cache"
+        stores_json=stores_dict[latlon]
+
+    return HttpResponse(stores_json, content_type='application/json')
 
 def donate(request):
     if request.method == 'POST':
@@ -87,6 +138,9 @@ def donate(request):
 
 
 def queryScore(request):
+    """this function handles the post of form submit
+       ecah post records the infos of one article
+    """
     if request.method == 'POST':
 	updated=False
 	scores=[u'Worst', u'Normal', u'Nice']
@@ -144,65 +198,3 @@ def queryScore(request):
         return HttpResponse(json.dumps({"result":query_result}), content_type='application/json')
 
 
-def queryLatlng(request):
-    print request.POST.keys()
-    source_query=request.POST['Drag_Serach']
-    print source_query
-    latlon = request.POST['latlngs'];
-    if (stores_dict.get(latlon,None)==None):
-        qpstr = latlon.split(",");
-        print qpstr
-        conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
-        cur = conn.cursor()
-        start = timeit.default_timer()
-        cur.execute("""select latlon,storename from storetable \
-        where (point(split_part(latlon, ',', 2)::numeric,split_part(latlon, ',', 1)::numeric)<@> point("""+qpstr[1]+","+qpstr[0]+"""))<1.3""")
-        rows = cur.fetchall()
-        stop = timeit.default_timer()
-        print "calclute distance take :"+str(stop - start) +"s"
-        a=rows
-        r=[]
-        start = timeit.default_timer()
-
-        count=1
-        tempstr=""
-        for i in a:
-            if(count!=len(a)):
-                tempstr+="'"+i[0]+"',"
-            else:
-                tempstr+="'"+i[0]+"'"
-            count+=1
-        cur.execute("select title,url,latlon from articletable where latlon in ("+tempstr+")")
-        rows = cur.fetchall()
-        stop = timeit.default_timer()
-        rx=dict()
-        
-        print("[queryLatlng] acticles amount :  %d"%len(rows))
-
-        if len(rows)>7000:
-            print("[queryLatlng] size too large, downsampling")
-            rows = [ rows[i] for i in sorted(random.sample(xrange(len(rows)), 7000)) ]
-            print("[queryLatlng] size after sampled :  %d"%len(rows))
-
-
-        for i in rows:
-            if(rx.get(i[2],0)==0):
-                rx[i[2]]=[i]
-            else:
-                rx[i[2]].append(i)
-        r=rx.items()
-
-        stores_json = json.dumps(r)
-        #record this latlng only for serach
-        if(source_query=="Serach"):
-            print "record to stores_dict"
-            stores_dict[latlon]=stores_json
-        stop = timeit.default_timer()
-        print "Food Board queryLatlng : response from DB"
-        print "Find child takes :"+str(stop - start) +"s"
-        conn.close()
-    else:
-        print "Food Board queryLatlng : response from cache"
-        stores_json=stores_dict[latlon]
-
-    return HttpResponse(stores_json, content_type='application/json')
