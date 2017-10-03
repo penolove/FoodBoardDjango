@@ -8,6 +8,7 @@ import psycopg2
 import timeit
 from datetime import datetime
 import time
+import random
 
 stores_dict={}
 timetick = time.strftime("%Y.%m.%d.%H.%M")
@@ -31,7 +32,7 @@ def googlemap(request):
     #latlon="120.99.06655,24.7893351"
     #TMU
     latlon = "121.56161799999995,25.025354"
-    radius = "1.0"
+    radius = "0.5"
     lon_,lat_ = latlon.split(",")
     if (stores_dict.get(latlon,None)==None):
         conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
@@ -175,6 +176,14 @@ def queryLatlng(request):
         rows = cur.fetchall()
         stop = timeit.default_timer()
         rx=dict()
+        
+        print("[queryLatlng] acticles amount :  %d"%len(rows))
+
+        if len(rows)>7000:
+            print("[queryLatlng] size too large, downsampling")
+            rows = [ rows[i] for i in sorted(random.sample(xrange(len(rows)), 7000)) ]
+            print("[queryLatlng] size after sampled :  %d"%len(rows))
+
 
         for i in rows:
             if(rx.get(i[2],0)==0):
