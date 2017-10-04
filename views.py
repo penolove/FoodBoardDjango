@@ -20,7 +20,27 @@ Maximum_articles = 2000
 
 
 def query_core(latlon,radius=radius):
-    """ reuse this function for latlon post or get request"""
+    """ This function were used to get all the articles of store near by the given location
+
+    all the atricle of stores that distance(store, latlon)< radius
+    it will do two times query, first time get stores, second time get articles
+    Finally we will return a json dump of a Dict : stores_json
+    and the content of dict is key = latlon ,value= [article_tile,url,latlon].
+    
+    Parameters
+    ----------
+    latlon : string
+        for example:
+        latlon = "121.56161799999995,25.025354"
+    radius : float(optional)
+        which unit is km
+
+    Returns
+    -------
+    stores_json : string
+        but acctually it's a dict which dump into json format
+
+    """
     conn = psycopg2.connect("dbname='foodmining' user='penolove' host='localhost' password='password'")
     cur = conn.cursor()
     start = timeit.default_timer()
@@ -50,7 +70,7 @@ def query_core(latlon,radius=radius):
         print("[queryLatlng] size after sampled :  %d"%len(rows))
 
     stop = timeit.default_timer()
-    rx=dict()
+    rx=dict() # the key of dict is latlon
     for i in rows:
         if(rx.get(i[2],0)==0):
             rx[i[2]]=[i]
@@ -97,7 +117,7 @@ def googlemap(request):
         print "Food Board queryLatlng : response from cache"
         stores_json=stores_dict[latlon]
 
-    return render(request, 'FoodBoard/google.html', {'stores':stores_json,'lat':lat_,'lon':lon_})
+    zOreturn render(request, 'FoodBoard/google.html', {'stores':stores_json,'lat':lat_,'lon':lon_})
 
 def queryLatlng(request):
     """this function handle latlon post query,
